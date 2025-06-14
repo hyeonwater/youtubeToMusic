@@ -14,8 +14,6 @@ export const HomePage: React.FC = () => {
               🎵 YouTube to Music
             </h1>
             <p className="text-gray-600 max-w-2xl mx-auto">
-              YouTube 비디오의 고정된 댓글에서 음악 목록을 자동으로 추출합니다.
-              <br />
               YouTube URL을 입력하면 "노래제목 - 가수" 형태로 깔끔하게 정리해드립니다.
             </p>
           </div>

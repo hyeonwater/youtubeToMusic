@@ -65,16 +65,94 @@ function parseMusicLine(line: string): MusicTrack | null {
     };
   }
 
-  // 패턴 1: "시간:시간 가수 - 노래제목" (예: "01:56 d4vd - Sleep Well")
-  const pattern1_extended = /^(\d{1,2}:\d{2})\s+(.+?)\s*-\s*(.+?)$/;
-  const match1_extended = cleanLine.match(pattern1_extended);
-  if (match1_extended) {
-    return {
-      title: match1_extended[3].trim().replace(/♥/g, '').trim(),
-      artist: match1_extended[2].trim().replace(/♥/g, '').trim(),
-      originalText: cleanLine,
-      timeStamp: match1_extended[1]
-    };
+  // 패턴 1: "시간:시간 노래제목-가수" (예: "0:00 wRoNg (feat. kehlani) -ZAYN", "1:30 TiO-ZAYN")
+  const pattern1_title_artist = /^(\d{1,2}:\d{2})\s+(.+?)\s*-\s*(.+?)$/;
+  const match1_title_artist = cleanLine.match(pattern1_title_artist);
+  if (match1_title_artist) {
+    const potentialTitle = match1_title_artist[2].trim().replace(/♥/g, '').trim();
+    const potentialArtist = match1_title_artist[3].trim().replace(/♥/g, '').trim();
+    
+    // 더 정확한 판단 로직
+    const hasFeature = potentialTitle.includes('feat.') || potentialTitle.includes('ft.');
+    const titleHasParentheses = potentialTitle.includes('(') && potentialTitle.includes(')');
+    
+    // 아티스트 이름 패턴 감지
+    const artistIsShort = potentialArtist.length <= 30;
+    const artistHasCapitalPattern = /^[A-Z]/.test(potentialArtist);
+    const artistHasSimpleWords = /^[A-Za-z\s&.,'-]+$/.test(potentialArtist);
+    const artistIsShorterThanTitle = potentialArtist.length < potentialTitle.length;
+    
+    // 제목에 복잡한 패턴이 있는지 확인
+    const titleHasComplexPatternOld = potentialTitle.includes('(') || potentialTitle.includes('[') || 
+                                     potentialTitle.includes('feat.') || potentialTitle.includes('ft.');
+    
+    // 아티스트가 여러 명인지 확인 (콤마나 &로 구분)
+    const hasMultipleArtists = potentialArtist.includes(',') || potentialArtist.includes('&');
+    
+    // 더 정확한 판단 로직
+    // 1. feat./ft.가 있으면 무조건 "제목-아티스트"
+    // 2. 일반적인 아티스트 이름 패턴이면 "제목-아티스트"
+    // 3. 복잡한 아티스트 이름(여러 명, 콤마)이면 "아티스트-제목"으로 처리
+    
+    const artistWords = potentialArtist.split(/[\s&,]+/).filter(word => word.length > 0);
+    const titleWords = potentialTitle.split(/[\s&,]+/).filter(word => word.length > 0);
+    
+    // 알려진 아티스트 패턴들
+    const knownArtistPatterns = [
+      /^[A-Z][a-z]+$/,                    // 단일 단어 (ZAYN, WILLOW)
+      /^[A-Z][a-z]+\s+[A-Z][a-z]+$/,     // 두 단어 (Justin Bieber, Chris Brown)
+      /^[A-Z][a-z]+\s+\d+$/,             // 이름 + 숫자 (Maroon 5)
+      /^The\s+[A-Z][a-z\s]+$/,           // The로 시작 (The Weeknd, The Notorious B.I.G.)
+      /^[A-Z]{2,}$/,                     // 모두 대문자 (DJ, BTS)
+      /^[A-Z][a-z]+\s+[A-Z]\.[A-Z]\.$/,  // 이니셜 포함 (The Notorious B.I.G.)
+      /^[A-Z][a-z]+\s+[A-Z][a-z]+\s+[A-Z][a-z]+$/, // 세 단어 (Ed Sheeran)
+      /^DJ\s+[A-Z][a-z]+$/,              // DJ + 이름 (DJ Khaled)
+      /^\d+\s+Shake$/,                   // 숫자 + 단어 (070 Shake)
+      /^[A-Z][a-z]+\s+Oranges$/,         // 특별한 패턴 (Emotional Oranges)
+      /^CKay$/,                          // 특별한 이름들
+    ];
+    
+    // 아티스트가 알려진 패턴에 맞는지 확인
+    const matchesArtistPattern = knownArtistPatterns.some(pattern => pattern.test(potentialArtist));
+    
+    // 제목에 복잡한 패턴이 있는지 확인
+    const titleHasComplexPattern = hasFeature || titleHasParentheses || 
+                                  potentialTitle.includes('[') || potentialTitle.includes(']');
+    
+    // 아티스트가 여러 명인지 확인 (콤마로 구분된 경우)
+    const hasMultipleArtistsInTitle = potentialTitle.includes(',') && 
+                                     potentialTitle.split(',').length > 1 &&
+                                     potentialTitle.split(',').every(part => part.trim().length > 2);
+    
+    // 제목-아티스트 형식으로 판단하는 조건들
+    const isDefinitelyTitleArtist = 
+      hasFeature ||                                    // feat./ft.가 있으면 무조건 제목-아티스트
+      matchesArtistPattern ||                          // 알려진 아티스트 패턴
+      (artistWords.length <= 3 && !potentialArtist.includes(',')) || // 단순한 아티스트 이름
+      (titleHasComplexPattern && artistWords.length <= 2);           // 복잡한 제목 + 단순한 아티스트
+    
+    // 아티스트-제목 형식으로 판단하는 조건들  
+    const isDefinitelyArtistTitle = 
+      hasMultipleArtistsInTitle ||                     // 제목에 여러 아티스트가 콤마로 구분
+      (potentialTitle.includes(',') && potentialTitle.includes('&')); // 복잡한 아티스트 조합
+    
+    if (isDefinitelyArtistTitle) {
+      // "아티스트-제목" 형식
+      return {
+        title: potentialArtist,
+        artist: potentialTitle,
+        originalText: cleanLine,
+        timeStamp: match1_title_artist[1]
+      };
+    } else {
+      // "제목-아티스트" 형식 (기본값)
+      return {
+        title: potentialTitle,
+        artist: potentialArtist,
+        originalText: cleanLine,
+        timeStamp: match1_title_artist[1]
+      };
+    }
   }
 
   // 패턴 1_: "시간:시간 노래제목 _ 가수" (예: "04:55 이 밤이 지나면 _ 임재범")
