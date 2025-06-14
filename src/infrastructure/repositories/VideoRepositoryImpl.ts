@@ -43,13 +43,7 @@ export class VideoRepositoryImpl implements VideoRepository {
     const video = await this.getVideoById(videoId);
     if (!video) return null;
 
-    return {
-      id: video.id,
-      title: video.title,
-      description: video.description,
-      channelInfo: video.channelInfo,
-      publishedAt: video.publishedAt,
-    };
+    return video.getSummary();
   }
 
   async checkVideoExists(videoId: string): Promise<boolean> {
@@ -69,10 +63,16 @@ export class VideoRepositoryImpl implements VideoRepository {
       id: video.id,
       title: video.title,
       description: video.description,
-      channelInfo: video.channelInfo,
-      thumbnails: video.thumbnails,
+      channelId: video.channelInfo.id,
+      channelTitle: video.channelInfo.title,
+      thumbnailUrl: video.thumbnails.getBestQuality().url,
       publishedAt: video.publishedAt,
       tags: video.tags,
+      availability: {
+        isPublic: true,
+        isEmbeddable: true,
+        hasComments: true,
+      },
     };
   }
 } 

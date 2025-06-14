@@ -1,6 +1,5 @@
 import React from 'react';
 import { useYouTubeViewModel } from '../viewmodels/useYouTubeViewModel';
-import { isValidYouTubeUrl } from '../../shared/utils/youtube';
 
 export const YouTubeUrlInput: React.FC = () => {
   const { 

@@ -27,7 +27,6 @@ export const useYouTubeViewModel = () => {
     setCurrentUrl,
     setCurrentVideoId,
     setLoading,
-    setError,
     clearError,
     setPinnedComments,
     setCommentsError,
@@ -47,7 +46,6 @@ export const useYouTubeViewModel = () => {
   const {
     data: videoInfo,
     isLoading: isVideoLoading,
-    error: videoError,
   } = useQuery({
     queryKey: ['videoInfo', currentVideoId],
     queryFn: async () => {
