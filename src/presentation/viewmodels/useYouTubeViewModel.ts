@@ -1,6 +1,8 @@
 import React, { useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAppStore } from '../stores/useAppStore';
+import { useAppleMusicStore } from '../stores/useAppleMusicStore';
+import { useYouTubeMusicStore } from '../stores/useYouTubeMusicStore';
 import type { YouTubeUrlForm } from '../../shared/types/app';
 import { CommentRepositoryImpl } from '../../infrastructure/repositories/CommentRepositoryImpl';
 import { VideoRepositoryImpl } from '../../infrastructure/repositories/VideoRepositoryImpl';
@@ -31,6 +33,10 @@ export const useYouTubeViewModel = () => {
     setPinnedComments,
     setCommentsError,
   } = useAppStore();
+
+  // Music stores for clearing playlist creation results
+  const appleMusicStore = useAppleMusicStore();
+  const youtubeMusicStore = useYouTubeMusicStore();
 
   // Initialize repositories and services
   const repositories = React.useMemo(() => {
@@ -82,6 +88,11 @@ export const useYouTubeViewModel = () => {
   // Handle URL input change
   const handleUrlChange = useCallback((urlString: string) => {
     clearError();
+    
+    // Clear playlist creation results when URL changes
+    appleMusicStore.clearResults();
+    youtubeMusicStore.clearResults();
+    
     const urlForm = processUrl(urlString);
     setCurrentUrl(urlForm);
     
@@ -90,7 +101,7 @@ export const useYouTubeViewModel = () => {
     } else {
       setCurrentVideoId(null);
     }
-  }, [processUrl, setCurrentUrl, setCurrentVideoId, clearError]);
+  }, [processUrl, setCurrentUrl, setCurrentVideoId, clearError, appleMusicStore, youtubeMusicStore]);
 
   // Fetch pinned comments using React Query
   const {
@@ -171,7 +182,11 @@ export const useYouTubeViewModel = () => {
     setPinnedComments([]);
     setCommentsError(null);
     clearError();
-  }, [setCurrentUrl, setCurrentVideoId, setPinnedComments, setCommentsError, clearError]);
+    
+    // Clear playlist creation results
+    appleMusicStore.clearResults();
+    youtubeMusicStore.clearResults();
+  }, [setCurrentUrl, setCurrentVideoId, setPinnedComments, setCommentsError, clearError, appleMusicStore, youtubeMusicStore]);
 
   return {
     // State

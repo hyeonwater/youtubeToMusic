@@ -14,7 +14,7 @@ export const HomePage: React.FC = () => {
               🎵 YouTube to Music
             </h1>
             <p className="text-gray-600 max-w-2xl mx-auto">
-              YouTube URL을 입력하면 "노래제목 - 가수" 형태로 깔끔하게 정리해드립니다.
+              유튜브에 상세내용 또는 댓글에 노래 정보가 있으면 자동으로 추출해 플레이리스트를 만들어드립니다.
             </p>
           </div>
         </div>

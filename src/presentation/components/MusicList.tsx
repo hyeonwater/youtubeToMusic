@@ -6,7 +6,11 @@ import {
   containsMusicList,
   type MusicTrack 
 } from '../../shared/utils/musicParser';
+import { useAppleMusicStore } from '../stores/useAppleMusicStore';
+import { useYouTubeMusicStore } from '../stores/useYouTubeMusicStore';
+import { MusicServiceSelector } from './MusicServiceSelector';
 import { AppleMusicAuth } from './AppleMusicAuth';
+import { YouTubeMusicAuth } from './YouTubeMusicAuth';
 import { PlaylistCreator } from './PlaylistCreator';
 
 interface MusicListProps {
@@ -26,6 +30,23 @@ export const MusicList: React.FC<MusicListProps> = ({ comments, videoTitle }) =>
   const [allTracks, setAllTracks] = React.useState<MusicTrack[]>([]);
   const [formattedTracks, setFormattedTracks] = React.useState<string[]>([]);
   const [sourceInfo, setSourceInfo] = React.useState<string>('');
+  const [selectedService, setSelectedService] = React.useState<'apple-music' | 'youtube-music'>('apple-music');
+  const [lastClearedTrackCount, setLastClearedTrackCount] = React.useState(0);
+
+  // Get stores for clearing playlist results when tracks change
+  const appleMusicStore = useAppleMusicStore();
+  const youtubeMusicStore = useYouTubeMusicStore();
+
+  // 서비스 변경 시 다른 서비스의 상태 초기화
+  const handleServiceChange = React.useCallback((service: 'apple-music' | 'youtube-music') => {
+    setSelectedService(service);
+    // 선택된 서비스가 아닌 다른 서비스의 결과 초기화
+    if (service === 'apple-music') {
+      youtubeMusicStore.clearResults();
+    } else {
+      appleMusicStore.clearResults();
+    }
+  }, []); // 의존성 배열을 비워서 무한 루프 방지
 
   React.useEffect(() => {
     const musicTracks: MusicTrack[] = [];
@@ -56,6 +77,15 @@ export const MusicList: React.FC<MusicListProps> = ({ comments, videoTitle }) =>
       setSourceInfo('고정 댓글');
     }
   }, [comments]);
+
+  // Clear playlist creation results when new music is loaded (only when track count changes)
+  React.useEffect(() => {
+    if (allTracks.length > 0 && allTracks.length !== lastClearedTrackCount) {
+      appleMusicStore.clearResults();
+      youtubeMusicStore.clearResults();
+      setLastClearedTrackCount(allTracks.length);
+    }
+  }, [allTracks.length, lastClearedTrackCount]);
 
   function getSourceDisplayName(source: string): string {
     switch (source) {
@@ -106,11 +136,21 @@ export const MusicList: React.FC<MusicListProps> = ({ comments, videoTitle }) =>
 
   return (
     <div className="w-full max-w-4xl mx-auto space-y-6">
-      {/* Apple Music 인증 */}
-      <AppleMusicAuth />
+      {/* 음악 서비스 선택 */}
+      <MusicServiceSelector 
+        selectedService={selectedService}
+        onServiceChange={handleServiceChange}
+      />
+      
+      {/* 선택된 서비스에 따른 인증 */}
+      {selectedService === 'apple-music' ? <AppleMusicAuth /> : <YouTubeMusicAuth />}
       
       {/* 플레이리스트 생성기 */}
-      <PlaylistCreator tracks={allTracks} videoTitle={videoTitle} />
+      <PlaylistCreator 
+        tracks={allTracks} 
+        videoTitle={videoTitle} 
+        selectedService={selectedService}
+      />
       
       {/* 음악 목록 */}
       <div className="bg-white rounded-lg shadow-md overflow-hidden">

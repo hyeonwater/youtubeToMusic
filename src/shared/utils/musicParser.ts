@@ -29,36 +29,60 @@ function parseMusicLine(line: string): MusicTrack | null {
   // 먼저 라인을 정리 (양쪽 공백 제거)
   const cleanLine = line.trim();
   
+  // 패턴 0-new: "시간:시간 시간:시간 가수 - 노래제목 💙" (예: "0:00 0:00 DONATO - Hate Me Less 💙")
+  const patternDoubleTime = /^(\d{1,2}:\d{2})\s+\d{1,2}:\d{2}\s+(.+?)\s*-\s*(.+?)(?:\s*💙)?$/;
+  const matchDoubleTime = cleanLine.match(patternDoubleTime);
+  if (matchDoubleTime) {
+    return {
+      title: matchDoubleTime[3].trim().replace(/💙/g, '').trim(),
+      artist: matchDoubleTime[2].trim().replace(/💙/g, '').trim(),
+      originalText: cleanLine,
+      timeStamp: matchDoubleTime[1]
+    };
+  }
+
+  // 패턴 0-new-long: "시간:시간:시간 시간:시간:시간 가수 - 노래제목 💙" (예: "1:02:21 1:02:21 J.Tajor - I Want You")
+  const patternDoubleLongTime = /^(\d{1,2}:\d{2}:\d{2})\s+\d{1,2}:\d{2}:\d{2}\s+(.+?)\s*-\s*(.+?)(?:\s*💙)?$/;
+  const matchDoubleLongTime = cleanLine.match(patternDoubleLongTime);
+  if (matchDoubleLongTime) {
+    return {
+      title: matchDoubleLongTime[3].trim().replace(/💙/g, '').trim(),
+      artist: matchDoubleLongTime[2].trim().replace(/💙/g, '').trim(),
+      originalText: cleanLine,
+      timeStamp: matchDoubleLongTime[1]
+    };
+  }
+  
   // 패턴 0: "시간:시간:시간 가수 - 노래제목" (예: "00:01:56 d4vd - Sleep Well")
-  const pattern0 = /^(\d{2}:\d{2}:\d{2})\s+(.+?)\s*-\s*(.+?)$/;
+  const pattern0 = /^(\d{2}:\d{2}:\d{2})\s+(.+?)\s*-\s*(.+?)(?:\s*[♥💙])?$/;
   const match0 = cleanLine.match(pattern0);
   if (match0) {
     return {
-      title: match0[3].trim().replace(/♥/g, '').trim(),
-      artist: match0[2].trim().replace(/♥/g, '').trim(),
+      title: match0[3].trim().replace(/[♥💙]/g, '').trim(),
+      artist: match0[2].trim().replace(/[♥💙]/g, '').trim(),
       originalText: cleanLine,
       timeStamp: match0[1]
     };
   }
 
   // 패턴 0_: "시간:시간:시간 노래제목 _ 가수" (예: "00:00 지난날 _ 유재하")
-  const pattern0_ = /^(\d{2}:\d{2}:\d{2})\s+(.+?)\s*_\s*(.+?)$/;
+  const pattern0_ = /^(\d{2}:\d{2}:\d{2})\s+(.+?)\s*_\s*(.+?)(?:\s*[♥💙])?$/;
   const match0_ = cleanLine.match(pattern0_);
   if (match0_) {
     return {
-      title: match0_[2].trim().replace(/♥/g, '').trim(),
-      artist: match0_[3].trim().replace(/♥/g, '').trim(),
+      title: match0_[2].trim().replace(/[♥💙]/g, '').trim(),
+      artist: match0_[3].trim().replace(/[♥💙]/g, '').trim(),
       originalText: cleanLine,
       timeStamp: match0_[1]
     };
   }
 
   // 패턴 0-1: "시간:시간:시간 노래제목" (아티스트가 없는 경우, 예: "00:12:32 Until I Found You")
-  const pattern0_1 = /^(\d{2}:\d{2}:\d{2})\s+(.+?)(?:\s*♥\s*)?$/;
+  const pattern0_1 = /^(\d{2}:\d{2}:\d{2})\s+(.+?)(?:\s*[♥💙]\s*)?$/;
   const match0_1 = cleanLine.match(pattern0_1);
   if (match0_1 && !cleanLine.includes(' - ') && !cleanLine.includes(' _ ')) {
     return {
-      title: match0_1[2].trim().replace(/♥/g, '').trim(),
+      title: match0_1[2].trim().replace(/[♥💙]/g, '').trim(),
       artist: 'Unknown Artist',
       originalText: cleanLine,
       timeStamp: match0_1[1]
@@ -156,23 +180,23 @@ function parseMusicLine(line: string): MusicTrack | null {
   }
 
   // 패턴 1_: "시간:시간 노래제목 _ 가수" (예: "04:55 이 밤이 지나면 _ 임재범")
-  const pattern1_ = /^(\d{1,2}:\d{2})\s+(.+?)\s*_\s*(.+?)$/;
+  const pattern1_ = /^(\d{1,2}:\d{2})\s+(.+?)\s*_\s*(.+?)(?:\s*[♥💙])?$/;
   const match1_ = cleanLine.match(pattern1_);
   if (match1_) {
     return {
-      title: match1_[2].trim().replace(/♥/g, '').trim(),
-      artist: match1_[3].trim().replace(/♥/g, '').trim(),
+      title: match1_[2].trim().replace(/[♥💙]/g, '').trim(),
+      artist: match1_[3].trim().replace(/[♥💙]/g, '').trim(),
       originalText: cleanLine,
       timeStamp: match1_[1]
     };
   }
 
   // 패턴 1-1: "시간:시간 노래제목" (아티스트가 없는 경우)
-  const pattern1_1 = /^(\d{1,2}:\d{2})\s+(.+?)(?:\s*♥\s*)?$/;
+  const pattern1_1 = /^(\d{1,2}:\d{2})\s+(.+?)(?:\s*[♥💙]\s*)?$/;
   const match1_1 = cleanLine.match(pattern1_1);
   if (match1_1 && !cleanLine.includes(' - ') && !cleanLine.includes(' _ ')) {
     return {
-      title: match1_1[2].trim().replace(/♥/g, '').trim(),
+      title: match1_1[2].trim().replace(/[♥💙]/g, '').trim(),
       artist: 'Unknown Artist',
       originalText: cleanLine,
       timeStamp: match1_1[1]
@@ -304,9 +328,9 @@ export function formatMusicTracks(tracks: MusicTrack[]): string[] {
   return tracks
     .filter(isValidMusicTrack)
     .map(track => {
-      // ♥ 기호 제거
-      const cleanTitle = track.title.replace(/♥/g, '').trim();
-      const cleanArtist = track.artist.replace(/♥/g, '').trim();
+      // ♥ 💙 기호 제거
+      const cleanTitle = track.title.replace(/[♥💙]/g, '').trim();
+      const cleanArtist = track.artist.replace(/[♥💙]/g, '').trim();
       
       // Unknown Artist인 경우 아티스트 부분을 생략
       if (cleanArtist === 'Unknown Artist') {
@@ -322,11 +346,62 @@ export function formatMusicTracks(tracks: MusicTrack[]): string[] {
  */
 export function containsMusicList(comment: string): boolean {
   const musicIndicators = [
-    /\d+\.\s*.+\s*-\s*.+/,      // 번호가 있는 목록
-    /\d+:\d+[-–]\d+:\d+/,       // 시간 범위
-    /.+\s*-\s*.+/,              // 하이픈으로 구분된 형태
-    /.+\s*_\s*.+/,              // 언더스코어로 구분된 형태
+    /\d+\.\s*.+\s*-\s*.+/,                    // 번호가 있는 목록 (예: "1. Artist - Song")
+    /\d+:\d+[-–]\d+:\d+/,                     // 시간 범위 (예: "0:00-3:45")
+    /\d+:\d+\s+.+\s*-\s*.+/,                 // 시간 + 음악 (예: "0:00 Artist - Song")
+    /\d+:\d+\s+\d+:\d+\s+.+\s*-\s*.+/,      // 중복 시간 + 음악 (예: "0:00 0:00 Artist - Song")
+    /.+\s*-\s*.+/,                           // 하이픈으로 구분된 형태 (예: "Artist - Song")
+    /.+\s*_\s*.+/,                           // 언더스코어로 구분된 형태 (예: "Song _ Artist")
+    /Tracklist/i,                            // "Tracklist" 단어
+    /Track\s*List/i,                         // "Track List" 단어
+    /Music\s*List/i,                         // "Music List" 단어
+    /Playlist/i,                             // "Playlist" 단어
+    /곡\s*목록/,                             // 한국어 "곡 목록"
+    /음악\s*목록/,                           // 한국어 "음악 목록"
+    /플레이리스트/,                          // 한국어 "플레이리스트"
+    /\d+\)\s*.+\s*-\s*.+/,                  // 괄호 번호 (예: "1) Artist - Song")
+    /^Track\s*\d+/mi,                        // "Track 1", "Track 2" 등
+    /♪|♫|🎵|🎶|💙|♥/,                       // 음악 이모지나 하트
   ];
 
-  return musicIndicators.some(pattern => pattern.test(comment));
+  // 여러 줄에서 음악 패턴이 3개 이상 있으면 음악 목록으로 간주
+  const lines = comment.split('\n').filter(line => line.trim().length > 0);
+  let musicLineCount = 0;
+  
+  for (const line of lines) {
+    const trimmedLine = line.trim();
+    
+    // 기본 패턴 검사
+    const hasBasicPattern = musicIndicators.some(pattern => pattern.test(trimmedLine));
+    if (hasBasicPattern) {
+      musicLineCount++;
+    }
+    
+    // 아티스트 - 곡 제목 패턴 검사 (더 엄격하게)
+    if (trimmedLine.includes(' - ') && !trimmedLine.includes('http') && !trimmedLine.includes('www.')) {
+      const parts = trimmedLine.split(' - ');
+      if (parts.length === 2 && parts[0].trim().length > 1 && parts[1].trim().length > 1) {
+        // 일반적이지 않은 텍스트 제외
+        const excludePatterns = [
+          /subscribe/i, /구독/i, /like/i, /좋아요/i, /comment/i, /댓글/i,
+          /follow/i, /팔로우/i, /instagram/i, /twitter/i, /facebook/i,
+          /copyright/i, /저작권/i, /contact/i, /연락/i, /email/i, /이메일/i
+        ];
+        
+        const isExcluded = excludePatterns.some(pattern => pattern.test(trimmedLine));
+        if (!isExcluded) {
+          musicLineCount++;
+        }
+      }
+    }
+  }
+  
+  // 3곡 이상이면 음악 목록으로 간주
+  if (musicLineCount >= 3) {
+    return true;
+  }
+  
+  // 특별한 키워드가 있으면 확인
+  const specialKeywords = ['tracklist', 'playlist', 'music list', 'track list', '곡 목록', '음악 목록', '플레이리스트'];
+  return specialKeywords.some(keyword => comment.toLowerCase().includes(keyword.toLowerCase()));
 } 

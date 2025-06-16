@@ -1,24 +1,16 @@
 import React, { useState } from 'react';
-import { useAppleMusicStore } from '../stores/useAppleMusicStore';
 import { useYouTubeMusicStore } from '../stores/useYouTubeMusicStore';
 import type { MusicTrack } from '../../shared/utils/musicParser';
 
-interface PlaylistCreatorProps {
+interface YouTubeMusicPlaylistCreatorProps {
   tracks: MusicTrack[];
   videoTitle?: string;
-  selectedService: 'apple-music' | 'youtube-music';
 }
 
-export const PlaylistCreator: React.FC<PlaylistCreatorProps> = ({ 
+export const YouTubeMusicPlaylistCreator: React.FC<YouTubeMusicPlaylistCreatorProps> = ({ 
   tracks, 
-  videoTitle,
-  selectedService
+  videoTitle 
 }) => {
-  const appleMusicStore = useAppleMusicStore();
-  const youtubeMusicStore = useYouTubeMusicStore();
-  
-  // 선택된 서비스에 따라 적절한 store 사용
-  const store = selectedService === 'apple-music' ? appleMusicStore : youtubeMusicStore;
   const {
     authState,
     isCreatingPlaylist,
@@ -27,7 +19,7 @@ export const PlaylistCreator: React.FC<PlaylistCreatorProps> = ({
     createPlaylistWithTracks,
     clearResults,
     authorize
-  } = store;
+  } = useYouTubeMusicStore();
 
   const [playlistName, setPlaylistName] = useState(
     () => videoTitle ? `${videoTitle.slice(0, 50)}${videoTitle.length > 50 ? '...' : ''}` : 'YouTube Music Playlist'
@@ -46,31 +38,31 @@ export const PlaylistCreator: React.FC<PlaylistCreatorProps> = ({
 
     try {
       setError('');
-      console.log('🎵 Starting playlist creation...');
+      console.log('🎵 Starting YouTube Music playlist creation...');
       console.log('📋 Playlist name:', playlistName);
       console.log('🎶 Number of tracks:', tracks.length);
       
-      // Apple Music 인증 상태 확인
+      // YouTube Music 인증 상태 확인
       console.log('🔐 Auth state:', authState);
       
       if (!authState.isAuthorized) {
         console.log('❌ User not authorized, starting authorization...');
         const success = await authorize();
         if (!success) {
-          throw new Error('Apple Music 인증에 실패했습니다.');
+          throw new Error('YouTube Music 인증에 실패했습니다.');
         }
       }
 
       clearResults();
       const result = await createPlaylistWithTracks(playlistName, tracks, description);
-      console.log('📊 Playlist creation result:', result);
+      console.log('📊 YouTube Music playlist creation result:', result);
       
       if (!result.success) {
-        console.error('❌ Playlist creation failed with result:', result);
+        console.error('❌ YouTube Music playlist creation failed with result:', result);
         throw new Error(result.error || '플레이리스트 생성에 실패했습니다.');
       }
     } catch (error) {
-      console.error('💥 Playlist creation error details:', {
+      console.error('💥 YouTube Music playlist creation error details:', {
         error,
         message: error instanceof Error ? error.message : 'Unknown error',
         stack: error instanceof Error ? error.stack : undefined,
@@ -91,11 +83,9 @@ export const PlaylistCreator: React.FC<PlaylistCreatorProps> = ({
           <svg className="w-12 h-12 text-gray-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
           </svg>
-          <h3 className="text-gray-600 font-medium mb-1 text-base sm:text-lg">
-            {selectedService === 'apple-music' ? 'Apple Music' : 'YouTube Music'} 로그인 필요
-          </h3>
+          <h3 className="text-gray-600 font-medium mb-1 text-base sm:text-lg">YouTube Music 로그인 필요</h3>
           <p className="text-gray-500 text-sm">
-            플레이리스트를 생성하려면 먼저 {selectedService === 'apple-music' ? 'Apple Music' : 'YouTube Music'}에 로그인해주세요.
+            플레이리스트를 생성하려면 먼저 YouTube Music에 로그인해주세요.
           </p>
         </div>
       </div>
@@ -130,7 +120,7 @@ export const PlaylistCreator: React.FC<PlaylistCreatorProps> = ({
               </svg>
               <div className="flex-1 min-w-0">
                 <h3 className="text-green-800 font-medium text-base sm:text-lg mb-2">
-                  🎉 {selectedService === 'apple-music' ? 'Apple Music' : 'YouTube Music'} 플레이리스트 생성 완료!
+                  🎉 YouTube Music 플레이리스트 생성 완료!
                 </h3>
                 <div className="text-green-700 space-y-1">
                   <p className="font-medium text-sm sm:text-base break-words">"{lastCreationResult.playlistName}"</p>
@@ -168,17 +158,14 @@ export const PlaylistCreator: React.FC<PlaylistCreatorProps> = ({
               >
                 새 플레이리스트 만들기
               </button>
-                              <button
-                  onClick={() => {
-                    const url = selectedService === 'apple-music' 
-                      ? 'https://music.apple.com' 
-                      : ('playlistUrl' in lastCreationResult! && lastCreationResult.playlistUrl) || 'https://music.youtube.com';
-                    window.open(url, '_blank');
-                  }}
+              {lastCreationResult.playlistUrl && (
+                <button
+                  onClick={() => window.open(lastCreationResult.playlistUrl, '_blank')}
                   className="bg-white hover:bg-gray-50 text-green-700 border border-green-300 px-4 py-3 sm:py-2 rounded-lg text-sm font-medium transition-colors min-h-[44px] sm:min-h-0"
                 >
-                  {selectedService === 'apple-music' ? 'Apple Music' : 'YouTube Music'}에서 확인
+                  YouTube Music에서 확인
                 </button>
+              )}
             </div>
           </div>
         ) : (
@@ -209,16 +196,16 @@ export const PlaylistCreator: React.FC<PlaylistCreatorProps> = ({
   // 플레이리스트 생성 중 표시
   if (isCreatingPlaylist) {
     return (
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 sm:p-6">
+      <div className="bg-red-50 border border-red-200 rounded-lg p-4 sm:p-6">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
-          <h3 className="text-blue-800 font-medium text-base sm:text-lg mb-2">
-            플레이리스트 생성 중...
+          <div className="w-16 h-16 border-4 border-red-200 border-t-red-600 rounded-full animate-spin mx-auto mb-4"></div>
+          <h3 className="text-red-800 font-medium text-base sm:text-lg mb-2">
+            YouTube Music 플레이리스트 생성 중...
           </h3>
-          <div className="text-blue-700 space-y-2">
-            <div className="bg-blue-100 rounded-full h-2 overflow-hidden">
+          <div className="text-red-700 space-y-2">
+            <div className="bg-red-100 rounded-full h-2 overflow-hidden">
               <div 
-                className="bg-blue-600 h-full transition-all duration-300"
+                className="bg-red-600 h-full transition-all duration-300"
                 style={{ 
                   width: `${creationProgress.total > 0 ? (creationProgress.current / creationProgress.total) * 100 : 0}%` 
                 }}
@@ -242,24 +229,18 @@ export const PlaylistCreator: React.FC<PlaylistCreatorProps> = ({
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6">
       <div className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-3 mb-6">
-        <div className={`w-10 h-10 ${selectedService === 'apple-music' ? 'bg-gradient-to-br from-pink-500 to-rose-600' : 'bg-red-600'} rounded-full flex items-center justify-center flex-shrink-0`}>
-          {selectedService === 'apple-music' ? (
-            <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          ) : (
-            <svg className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M21.582 6.186c-.23-2.12-2.075-3.965-4.195-4.195C15.413 1.5 12 1.5 12 1.5s-3.413 0-5.387.491C4.493 2.221 2.648 4.066 2.418 6.186 1.927 8.16 1.927 12 1.927 12s0 3.84.491 5.814c.23 2.12 2.075 3.965 4.195 4.195C8.587 22.5 12 22.5 12 22.5s3.413 0 5.387-.491c2.12-.23 3.965-2.075 4.195-4.195C22.073 15.84 22.073 12 22.073 12s0-3.84-.491-5.814z"/>
-              <polygon fill="#fff" points="9.545,15.568 15.818,12 9.545,8.432"/>
-            </svg>
-          )}
+        <div className="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center flex-shrink-0">
+          <svg className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M21.582 6.186c-.23-2.12-2.075-3.965-4.195-4.195C15.413 1.5 12 1.5 12 1.5s-3.413 0-5.387.491C4.493 2.221 2.648 4.066 2.418 6.186 1.927 8.16 1.927 12 1.927 12s0 3.84.491 5.814c.23 2.12 2.075 3.965 4.195 4.195C8.587 22.5 12 22.5 12 22.5s3.413 0 5.387-.491c2.12-.23 3.965-2.075 4.195-4.195C22.073 15.84 22.073 12 22.073 12s0-3.84-.491-5.814z"/>
+            <polygon fill="#fff" points="9.545,15.568 15.818,12 9.545,8.432"/>
+          </svg>
         </div>
         <div className="flex-1 min-w-0">
           <h3 className="text-base sm:text-lg font-bold text-gray-900">
-            {selectedService === 'apple-music' ? 'Apple Music' : 'YouTube Music'} 플레이리스트 생성
+            YouTube Music 플레이리스트 생성
           </h3>
           <p className="text-gray-600 text-sm">
-            {tracks.length}곡을 {selectedService === 'apple-music' ? 'Apple Music' : 'YouTube Music'} 플레이리스트로 추가합니다
+            {tracks.length}곡을 YouTube Music 플레이리스트로 추가합니다
           </p>
         </div>
       </div>
@@ -274,7 +255,7 @@ export const PlaylistCreator: React.FC<PlaylistCreatorProps> = ({
             type="text"
             value={playlistName}
             onChange={(e) => setPlaylistName(e.target.value)}
-            className="w-full px-3 py-3 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent text-base sm:text-sm"
+            className="w-full px-3 py-3 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-base sm:text-sm"
             placeholder="플레이리스트 이름을 입력하세요"
             maxLength={100}
           />
@@ -298,56 +279,33 @@ export const PlaylistCreator: React.FC<PlaylistCreatorProps> = ({
         </div>
 
         {showAdvanced && (
-          <div className="bg-gray-50 rounded-lg p-4 space-y-4">
+          <div className="border-t border-gray-200 pt-4 space-y-4">
             <div>
               <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
-                설명
+                설명 (선택사항)
               </label>
               <textarea
                 id="description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="w-full px-3 py-3 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent text-base sm:text-sm resize-none"
-                placeholder="플레이리스트 설명 (선택사항)"
-                rows={3}
-                maxLength={300}
+                className="w-full px-3 py-3 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-base sm:text-sm resize-none"
+                rows={2}
+                placeholder="플레이리스트 설명을 입력하세요"
+                maxLength={200}
               />
             </div>
           </div>
         )}
 
-        <div className="bg-gray-50 rounded-lg p-4">
-          <h4 className="font-medium text-gray-900 mb-2 text-sm sm:text-base">📋 추가될 곡 목록</h4>
-          <div className="max-h-32 overflow-y-auto space-y-1">
-            {tracks.slice(0, 10).map((track, index) => (
-              <div key={index} className="text-sm text-gray-700 py-1 break-words">
-                {index + 1}. {track.title} - {track.artist}
-              </div>
-            ))}
-            {tracks.length > 10 && (
-              <div className="text-sm text-gray-500 py-1">
-                ... 외 {tracks.length - 10}곡
-              </div>
-            )}
-          </div>
-        </div>
-
         <div className="pt-2">
           <button
             onClick={handleCreatePlaylist}
             disabled={!playlistName.trim() || isCreatingPlaylist}
-            className={`w-full ${selectedService === 'apple-music' ? 'bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700' : 'bg-red-600 hover:bg-red-700'} text-white px-6 py-4 sm:py-3 rounded-lg font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 min-h-[50px] sm:min-h-0`}
+            className="w-full bg-red-600 hover:bg-red-700 text-white px-6 py-4 sm:py-3 rounded-lg font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 min-h-[50px] sm:min-h-0"
           >
-            {selectedService === 'apple-music' ? (
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            ) : (
-              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M21.582 6.186c-.23-2.12-2.075-3.965-4.195-4.195C15.413 1.5 12 1.5 12 1.5s-3.413 0-5.387.491C4.493 2.221 2.648 4.066 2.418 6.186 1.927 8.16 1.927 12 1.927 12s0 3.84.491 5.814c.23 2.12 2.075 3.965 4.195 4.195C8.587 22.5 12 22.5 12 22.5s3.413 0 5.387-.491c2.12-.23 3.965-2.075 4.195-4.195C22.073 15.84 22.073 12 22.073 12s0-3.84-.491-5.814z"/>
-                <polygon fill="#fff" points="9.545,15.568 15.818,12 9.545,8.432"/>
-              </svg>
-            )}
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M21.582 6.186c-.23-2.12-2.075-3.965-4.195-4.195C15.413 1.5 12 1.5 12 1.5s-3.413 0-5.387.491C4.493 2.221 2.648 4.066 2.418 6.186 1.927 8.16 1.927 12 1.927 12s0 3.84.491 5.814c.23 2.12 2.075 3.965 4.195 4.195C8.587 22.5 12 22.5 12 22.5s3.413 0 5.387-.491c2.12-.23 3.965-2.075 4.195-4.195C22.073 15.84 22.073 12 22.073 12s0-3.84-.491-5.814z"/>
+            </svg>
             <span>플레이리스트 생성</span>
           </button>
         </div>
@@ -377,7 +335,7 @@ export const PlaylistCreator: React.FC<PlaylistCreatorProps> = ({
         <div className="text-xs text-gray-500 bg-yellow-50 border border-yellow-200 rounded p-3">
           <p className="font-medium text-yellow-800 mb-1">⚠️ 주의사항</p>
           <ul className="space-y-1 text-yellow-700">
-            <li>• {selectedService === 'apple-music' ? 'Apple Music' : 'YouTube Music'}에서 검색되지 않는 곡은 추가되지 않습니다</li>
+            <li>• YouTube Music에서 검색되지 않는 곡은 추가되지 않습니다</li>
             <li>• 곡 제목과 아티스트명이 정확할수록 매칭 성공률이 높습니다</li>
             <li>• 플레이리스트 생성에는 곡 수에 따라 시간이 소요될 수 있습니다</li>
           </ul>
