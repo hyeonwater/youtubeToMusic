@@ -134,4 +134,73 @@ export interface YouTubeApiError {
     domain: string;
     reason: string;
   }>;
+}
+
+// 플레이리스트 관련 타입들
+export interface PlaylistSnippet {
+  publishedAt: string;
+  channelId: string;
+  title: string;
+  description: string;
+  thumbnails: {
+    [key: string]: {
+      url: string;
+      width: number;
+      height: number;
+    };
+  };
+  channelTitle: string;
+  defaultLanguage?: string;
+  localized?: {
+    title: string;
+    description: string;
+  };
+}
+
+export interface Playlist {
+  kind: string;
+  etag: string;
+  id: string;
+  snippet: PlaylistSnippet;
+  status?: {
+    privacyStatus: string;
+  };
+  contentDetails?: {
+    itemCount: number;
+  };
+}
+
+export interface PlaylistItemSnippet {
+  publishedAt: string;
+  channelId: string;
+  title: string;
+  description: string;
+  thumbnails: {
+    [key: string]: {
+      url: string;
+      width: number;
+      height: number;
+    };
+  };
+  channelTitle: string;
+  playlistId: string;
+  position: number;
+  resourceId: {
+    kind: string;
+    videoId: string;
+  };
+}
+
+export interface PlaylistItem {
+  kind: string;
+  etag: string;
+  id: string;
+  snippet: PlaylistItemSnippet;
+  contentDetails?: {
+    videoId: string;
+    startAt?: string;
+    endAt?: string;
+    note?: string;
+    videoPublishedAt: string;
+  };
 } 

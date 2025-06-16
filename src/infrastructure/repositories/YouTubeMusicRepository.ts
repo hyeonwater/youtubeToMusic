@@ -19,7 +19,6 @@ export class YouTubeMusicRepository implements MusicServiceRepository {
     hasCredentials: false,
   };
   private credentials: YTMusicCredentials | null = null;
-  private baseUrl = 'https://music.youtube.com/youtubei/v1';
   private accessToken: string | null = null;
   
   // OAuth 2.0 설정
@@ -158,7 +157,7 @@ export class YouTubeMusicRepository implements MusicServiceRepository {
     console.log('✅ YouTube Music logged out successfully');
   }
 
-  async handleOAuthCallback(code: string): Promise<void> {
+  async handleOAuthCallback(): Promise<void> {
     // Google Identity Services를 사용하므로 더 이상 필요 없음
     console.log('ℹ️ Google Identity Services를 사용하므로 OAuth 콜백 처리가 필요하지 않습니다.');
     throw new Error('Google Identity Services를 사용하므로 OAuth 콜백이 더 이상 필요하지 않습니다.');
@@ -459,11 +458,11 @@ export class YouTubeMusicRepository implements MusicServiceRepository {
     return Math.min(confidence, 1.0);
   }
 
-  private async getAccessToken(): Promise<string> {
-    // 실제 구현에서는 OAuth 토큰을 반환해야 함
-    // 현재는 임시 구현
-    return 'dummy-access-token';
-  }
+  // private async getAccessToken(): Promise<string> {
+  //   // 실제 구현에서는 OAuth 토큰을 반환해야 함
+  //   // 현재는 임시 구현
+  //   return 'dummy-access-token';
+  // }
 
   private loadCredentials(): YTMusicCredentials | null {
     try {

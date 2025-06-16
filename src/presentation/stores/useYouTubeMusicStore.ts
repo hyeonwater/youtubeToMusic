@@ -129,14 +129,14 @@ export const useYouTubeMusicStore = create<YouTubeMusicStore>((set, get) => ({
     }
   },
 
-  handleOAuthCallback: async (code: string) => {
+  handleOAuthCallback: async () => {
     try {
       set(state => ({
         authState: { ...state.authState, isLoading: true, error: null }
       }));
 
       // OAuth 코드를 액세스 토큰으로 교환
-      await youtubeMusicRepository.handleOAuthCallback(code);
+      await youtubeMusicRepository.handleOAuthCallback();
       const authState = youtubeMusicService.getAuthState();
 
       set({ authState });

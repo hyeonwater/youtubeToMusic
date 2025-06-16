@@ -4,7 +4,10 @@ import { YOUTUBE_API } from '../../shared/constants/api';
 import type { 
   CommentThreadsResponse,
   VideosResponse,
-  YouTubeApiError 
+  YouTubeApiError,
+  Playlist,
+  PlaylistItem,
+  YouTubeApiResponse
 } from '../../shared/types/youtube';
 
 export class YouTubeApiClient {
@@ -44,6 +47,36 @@ export class YouTubeApiClient {
     try {
       const response = await this.client.get<VideosResponse>(
         YOUTUBE_API.ENDPOINTS.VIDEOS,
+        { params }
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleApiError(error);
+    }
+  }
+
+  /**
+   * 플레이리스트 목록을 가져옵니다.
+   */
+  async getPlaylists(params: PlaylistsParams): Promise<YouTubeApiResponse<Playlist>> {
+    try {
+      const response = await this.client.get<YouTubeApiResponse<Playlist>>(
+        'playlists',
+        { params }
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleApiError(error);
+    }
+  }
+
+  /**
+   * 플레이리스트 아이템들을 가져옵니다.
+   */
+  async getPlaylistItems(params: PlaylistItemsParams): Promise<YouTubeApiResponse<PlaylistItem>> {
+    try {
+      const response = await this.client.get<YouTubeApiResponse<PlaylistItem>>(
+        'playlistItems',
         { params }
       );
       return response.data;
@@ -152,6 +185,20 @@ export interface VideosParams {
   part: string;
   id: string;
   maxResults?: number;
+}
+
+export interface PlaylistsParams {
+  part: string;
+  id?: string;
+  maxResults?: number;
+  pageToken?: string;
+}
+
+export interface PlaylistItemsParams {
+  part: string;
+  playlistId: string;
+  maxResults?: number;
+  pageToken?: string;
 }
 
 // 싱글톤 인스턴스
